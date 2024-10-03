@@ -1,3 +1,3 @@
-# Code is expected in the first half of November 2025. 
+# CLoSD: Closing the Loop between Simulation and Diffusion for multi-task character control
 
-# Stay tuned!
+## Code is expected in the first half of November 2025. Stay tuned!
