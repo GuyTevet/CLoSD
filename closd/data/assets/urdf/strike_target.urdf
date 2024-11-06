@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<robot name="sofa">
+    <link name="sit">
+        <visual><geometry><mesh filename="../mesh/strike/target_full.obj"/></geometry></visual>
+        <collision><geometry><mesh filename="../mesh/strike/target_full.obj"/></geometry></collision>
+    </link>
+</robot>

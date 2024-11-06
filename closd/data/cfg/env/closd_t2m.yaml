@@ -1,0 +1,13 @@
+defaults:
+  - closd_base
+
+task: CLoSDT2M
+episode_length: 300
+
+dip:
+  model_path: closd/diffusion_planner/save/DiP_no-target_10steps_context20_predict40/model000200000.pt  # without target cond
+  save_hml_episodes: False
+  save_hml_episodes_dir: ''
+  max_saved_hml_episodes: 10000
+
+support_phc_markers: True

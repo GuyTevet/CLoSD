@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<robot name="sofa">
+    <link name="sit">
+        <visual><geometry><mesh filename="../mesh/sofa/back_sit.obj"/></geometry></visual>
+        <visual><geometry><mesh filename="../mesh/sofa/sit.obj"/></geometry></visual>
+        <visual><geometry><mesh filename="../mesh/sofa/bottom.obj"/></geometry></visual>
+        <visual><geometry><mesh filename="../mesh/sofa/left.obj"/></geometry></visual>
+        <visual><geometry><mesh filename="../mesh/sofa/right.obj"/></geometry></visual>
+        <visual><geometry><mesh filename="../mesh/sofa/legs.obj"/></geometry></visual>
+        
+        <collision><geometry><mesh filename="../mesh/sofa/back_sit.obj"/></geometry></collision>
+        <collision><geometry><mesh filename="../mesh/sofa/sit.obj"/></geometry></collision>
+        <collision><geometry><mesh filename="../mesh/sofa/bottom.obj"/></geometry></collision>
+        <collision><geometry><mesh filename="../mesh/sofa/left.obj"/></geometry></collision>
+        <collision><geometry><mesh filename="../mesh/sofa/right.obj"/></geometry></collision>
+        <collision><geometry><mesh filename="../mesh/sofa/legs.obj"/></geometry></collision>
+
+    </link>
+</robot>

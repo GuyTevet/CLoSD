@@ -1,0 +1,20 @@
+  open_loop_hook: False
+  debug_hml: False
+  planning_horizon: 16  # 20fps frames
+  planning_horizon_multiplyer: 1  # 1 means feature disabled
+  prompt: ''  # no prompt meaning sampling from the dataset
+  model_path:  './closd/diffusion_planner/save/FewSteps_DiffusionSteps_50/model000200000.pt'  # './closd/diffusion_planner/save/Ema2_DiffusionSteps_10/model000200000.pt'
+  limit_context: null # 30fps frames, if None - will not limit
+  cfg_param: 1.
+  context_switch_prob: 0.  # augmentation for training - randomly get the contexts form MDM instead of SIM; 0. == disabled 
+  traj_guidance: False  # For goal reaching
+  
+  # Recon guidance params
+  recon_param: 1e4
+  recon_step_start: -1  # Highest step index to perform recon_guidance. Default -1 means from first step
+  recon_step_stop: 2  # Lowest step index to perform recon_guidance. 0 means until the last step.
+  recon_frame_start: 0 # First frame index to perform recon_guidance.
+  recon_frame_stop: -1 # Last frame index to perform recon_guidance. Default -1 means from last step.
+
+  dump_mdm: False
+  save_hml_episodes: False
