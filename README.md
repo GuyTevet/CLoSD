@@ -24,13 +24,13 @@ If you find this code useful in your research, please cite:
 
 - The code was tested on `Ubuntu 20.04.5` with `Python 3.8.19`.
 - Running CLoSD requires a single GPU with `~4GB RAM` and a monitor.
-- Training and evaluation requires a single GPU with `~50GB RAM` (monitor is not required).
+- Training and evaluation require a single GPU with `~50GB RAM` (monitor is not required).
 - You only need to setup the Python environment. All the dependencies (data, checkpoints, etc.) will be cached automatically on the first run!
 
 <details>
   <summary><b>Setup env</b></summary>
 
-  - Create a Conda env and setup the requirments:
+  - Create a Conda env and setup the requirements:
 
 ```
 conda create -n closd python=3.8
@@ -46,6 +46,17 @@ conda activate closd
 cd <ISSAC_GYM_DIR>/python
 pip install -e .
 ```
+
+</details>
+
+<details>
+  <summary><b>Copyright notes</b></summary>
+  
+The code will automatically download cached versions of the following datasets and models. You must adhere to their terms of use!
+
+- SMPL license is according to https://smpl-x.is.tue.mpg.de/
+- AMASS license is according to  https://amass.is.tue.mpg.de/
+- HumanML3D dataset license is according to https://github.com/EricGuo5513/HumanML3D
 
 </details>
 
@@ -82,7 +93,7 @@ python closd/run.py\
 
 </details>
 
-- For running with the model witout fine-tuning, use `exp_name=CLoSD_no_finetune`
+- For running the model without fine-tuning, use `exp_name=CLoSD_no_finetune`
 
 
 ## Evaluate
@@ -111,7 +122,7 @@ python closd/run.py\
 <details>
   <summary><b>Text-to-motion</b></summary>
 
-- The raw result are at `https://huggingface.co/guytevet/CLoSD/blob/main/evaluation/closd/eval.log`, this code should reproduce it.
+- The raw results are at `https://huggingface.co/guytevet/CLoSD/blob/main/evaluation/closd/eval.log`, this code should reproduce it.
 - To reproduce Table 3 in the paper.
 - The evaluation process runs on pre-recorded data.
 
@@ -186,7 +197,7 @@ python closd/run.py\
 
 - Diffusion Planner (DiP) is a real-time autoregressive diffusion model that serves as the planner for the CLoSD agent.
 - Instead of running it as part of CLoSD, you can also run DiP in a stand-alone mode, fed by its own generated motions.
-- The following fetails how to sample/evaluate/train DiP in the **stand-alone** mode.
+- The following details how to sample/evaluate/train DiP in the **stand-alone** mode.
 
 ### 
 
@@ -228,8 +239,8 @@ left_foot,heading]
 <details>
   <summary><b>Stand-alone Evaluation</b></summary>
 
-- Evaluate DiP fed by its on predictions (without the CLoSD framework):
-- To reproduce Table 2 and 3 (the DiP entry) in the paper.
+- Evaluate DiP fed by its own predictions (without the CLoSD framework):
+- To reproduce Tables 2 and 3 (the DiP entry) in the paper.
 
 ```
 python -m closd.diffusion_planner.eval.eval_humanml\
