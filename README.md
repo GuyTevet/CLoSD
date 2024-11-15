@@ -121,10 +121,9 @@ python closd/run.py\
 
 <details>
   <summary><b>Text-to-motion</b></summary>
-
+  
+- The evaluation process runs on pre-recorded data and reproduces Table 3 in the paper.
 - The raw results are at `https://huggingface.co/guytevet/CLoSD/blob/main/evaluation/closd/eval.log`, this code should reproduce it.
-- To reproduce Table 3 in the paper.
-- The evaluation process runs on pre-recorded data.
 
 ```
 python -m closd.diffusion_planner.eval.eval_humanml --external_results_file closd/diffusion_planner/saved_motions/closd/CloSD.pkl --do_unique
