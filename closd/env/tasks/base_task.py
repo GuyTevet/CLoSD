@@ -73,7 +73,7 @@ class BaseTask():
             self.device = "cuda" + ":" + str(self.device_id)
 
         # double check!
-        self.graphics_device_id = self.device_id + 1  # Guy - for the local machine, do not publish
+        self.graphics_device_id = self.device_id
         if enable_camera_sensors == False and self.headless == True:
             self.graphics_device_id = -1
         # if flags.server_mode:
