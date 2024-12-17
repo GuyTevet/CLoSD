@@ -34,6 +34,7 @@ from closd.env.tasks.closd import CLoSD
 from closd.env.tasks.closd_task import CLoSDTask
 from closd.env.tasks.closd_t2m import CLoSDT2M
 from closd.env.tasks.closd_multitask import CLoSDMultiTask
+from closd.env.tasks.closd_sequence import CLoSDSequence
 
 from isaacgym import rlgpu
 

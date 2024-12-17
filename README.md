@@ -77,7 +77,15 @@ python closd/run.py\
 
 <details>
   <summary><b>Sequence of tasks</b></summary>
-- To be delivered soon
+
+```
+python closd/run.py\
+  learning=im_big robot=smpl_humanoid\
+  epoch=-1 test=True no_virtual_display=True\
+  headless=False env.num_envs=9\
+  env=closd_sequence exp_name=CLoSD_multitask_finetune
+```
+
 </details>
 
 <details>

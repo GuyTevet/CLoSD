@@ -44,20 +44,20 @@ import random
 
 class CLoSDMultiTask(closd_task.CLoSDTask):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
-        # self.init_state_options = [STATES.STRIKE_KICK]
-        if cfg['env']['task_filter'] == 'none':
-            print('Not applying any task filter.')
-            self.init_state_options = [STATES.STRIKE_KICK, STATES.STRIKE_PUNCH, STATES.SIT, STATES.SIT, STATES.REACH, STATES.REACH]
-        else:
-            print('Applying [{}] task filter.'.format(cfg['env']['task_filter']))
-            if cfg['env']['task_filter'] == 'bench':
-                self.init_state_options = [STATES.SIT]
-            elif cfg['env']['task_filter'] == 'strike':
-                self.init_state_options = [STATES.STRIKE_KICK, STATES.STRIKE_PUNCH]
-            elif cfg['env']['task_filter'] == 'reach':
-                self.init_state_options = [STATES.REACH]
+        if not hasattr(self, 'init_state_options'):
+            if cfg['env']['task_filter'] == 'none':
+                print('Not applying any task filter.')
+                self.init_state_options = [STATES.STRIKE_KICK, STATES.STRIKE_PUNCH, STATES.SIT, STATES.SIT, STATES.REACH, STATES.REACH]
             else:
-                raise ValueError()
+                print('Applying [{}] task filter.'.format(cfg['env']['task_filter']))
+                if cfg['env']['task_filter'] == 'bench':
+                    self.init_state_options = [STATES.SIT]
+                elif cfg['env']['task_filter'] == 'strike':
+                    self.init_state_options = [STATES.STRIKE_KICK, STATES.STRIKE_PUNCH]
+                elif cfg['env']['task_filter'] == 'reach':
+                    self.init_state_options = [STATES.REACH]
+                else:
+                    raise ValueError()
 
         self.states_to_eval = list(set(self.init_state_options))
         if STATES.SIT in self.states_to_eval:
@@ -113,25 +113,31 @@ class CLoSDMultiTask(closd_task.CLoSDTask):
 
         self.target_reset_fn_per_state = {
             STATES.SIT: self._reset_bench_target,
+            STATES.GET_UP: self._reset_bench_target,
             STATES.REACH: self._reset_reach_target,
             STATES.STRIKE_KICK: self._reset_strike_target,
             STATES.STRIKE_PUNCH: self._reset_strike_target,
+            STATES.HALT: self._reset_strike_target,
             # other states are invalid for task reset
         }
 
         self.update_machine_fn_per_state = {
             STATES.SIT: self.update_bench_state_machine,
+            STATES.GET_UP: self.update_bench_state_machine,
             STATES.REACH: self.update_reach_state_machine,
             STATES.STRIKE_KICK: self.update_strike_state_machine,
             STATES.STRIKE_PUNCH: self.update_strike_state_machine,
+            STATES.HALT: self.update_strike_state_machine,
             # other states are invalid for task reset
         }
 
         self.done_fn_per_state = {
             STATES.SIT: self.get_bench_cur_done,
+            STATES.GET_UP: self.get_bench_cur_done,
             STATES.REACH: self.get_reach_cur_done,
             STATES.STRIKE_KICK: self.get_strike_cur_done,
             STATES.STRIKE_PUNCH: self.get_strike_cur_done,
+            STATES.HALT: self.get_strike_cur_done,
             # other states are invalid for task reset
         }
 

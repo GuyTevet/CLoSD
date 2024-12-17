@@ -178,18 +178,6 @@ class CLoSDTask(closd.CLoSD):
     def _update_task(self):
         self.update_done()  # update all envs
         self.update_state_machine()
-        # DEBUG
-        # print('is_done', self.is_done)
-        # # print('progress_buf', self.progress_buf)
-        # import pdb
-        # if self.is_done[0] and not self.prev_done[0]:
-        #     pdb.set_trace()
-        # if self.progress_buf[0] == 50:
-        #     bbb = gymapi.UsdExportOptions()
-        #     bbb.single_file = True
-        #     usd_exp = self.gym.create_usd_exporter(bbb)
-        #     aaa = self.gym.export_usd_sim(usd_exp, self.sim, 'try.usd')
-        #     # exit()
         return
     
     def get_cur_done(self):
@@ -284,31 +272,6 @@ class CLoSDTask(closd.CLoSD):
         # print('debug_ends', self.debug_ends)
 
         return end_loc
-    
-    # def get_line_condition(self, translated_end_loc):
-
-    #     start_loc = torch.zeros_like(translated_end_loc)
-    #     end_heading = (torch.atan2(translated_end_loc[:, 0], translated_end_loc[:, 1])[:, None, None] - torch.pi)  % (2*torch.pi) - torch.pi  # [-pi, pi]            
-    #     start_heading = torch.zeros_like(end_heading)
-
-    #     # Calc traj
-    #     _t = torch.linspace(0., 1., self.mdm.model.pred_len+1, device=self.device)  # assuming fixed pred length
-    #     traj = start_loc[:, :, None] + _t[None, None, :] * (translated_end_loc[:, :, None] - start_loc[:, :, None])
-    #     heading_traj = start_heading + _t[None, None, :] * (end_heading - start_heading)  # FIXME - make it non-linear
-    #     motion_shape = (self.num_envs, self.mdm.njoints, self.mdm.nfeats, self.mdm.model.pred_len)
-    #     inpainted_motion = torch.zeros(motion_shape, dtype=torch.float32,
-    #                                             device=self.device)  # True means use gt motion
-    #     traj_data_unnorm = traj_global2vel(traj, heading_traj).to(self.device)
-    #     inpainted_motion[:, :3] = (traj_data_unnorm - self.mean[:3][None, :, None, None]) / self.std[:3][None, :, None, None]
-        
-    #     inpainting_mask = torch.zeros(motion_shape, dtype=torch.bool,
-    #                                             device=self.device)  # True means use gt motion
-    #     inpainting_mask[:, :3] = True
-
-    #     return {'condition_mask': inpainting_mask,
-    #             'condition_input': inpainted_motion,
-    #             }
-
 
     def _draw_task(self):
         if self.support_phc_markers:

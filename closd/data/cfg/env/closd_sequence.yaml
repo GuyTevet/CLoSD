@@ -1,0 +1,11 @@
+defaults:
+  - closd_multitask
+
+task: CLoSDSequence
+episode_length: 800
+getup_prob: 1.
+
+state_machine: [SIT, GET_UP, REACH, STRIKE_PUNCH, HALT]
+bench_dist_range: [0.8, 1.]
+strike_dist_range: [4., 4.5]
+reach_dist_range: null # currently, reaching target is just near the strike target, if you change the sequence you might also want to change this piece of code.
