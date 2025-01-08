@@ -9,7 +9,7 @@
 
 If you find this code useful in your research, please cite:
 
-```
+```bibtex
 @article{tevet2024closd,
   title={CLoSD: Closing the Loop between Simulation and Diffusion for multi-task character control},
   author={Tevet, Guy and Raab, Sigal and Cohan, Setareh and Reda, Daniele and Luo, Zhengyi and Peng, Xue Bin and Bermano, Amit H and van de Panne, Michiel},
@@ -32,7 +32,7 @@ If you find this code useful in your research, please cite:
 
   - Create a Conda env and setup the requirements:
 
-```
+```bash
 conda create -n closd python=3.8
 conda activate closd
 pip install -r requirement.txt
@@ -41,10 +41,17 @@ python -m spacy download en_core_web_sm
 
   - Download [Isaac GYM](https://developer.nvidia.com/isaac-gym), and install it to your env:
 
-```
+```bash
 conda activate closd
 cd <ISSAC_GYM_DIR>/python
 pip install -e .
+```
+
+  - Export the linker from the environment, to confirm the gym is correctly installed:
+
+```bash
+export LD_LIBRARY_PATH=$(dirname $(find $(dirname $(dirname $(which python))) -name "libpython3.8.so.1.0")):$LD_LIBRARY_PATH
+python -c "from isaacgym import gymapi"
 ```
 
 </details>
@@ -65,7 +72,7 @@ The code will automatically download cached versions of the following datasets a
 <details>
   <summary><b>Multi-task</b></summary>
 
-```
+```bash
 python closd/run.py\
   learning=im_big robot=smpl_humanoid\
   epoch=-1 test=True no_virtual_display=True\
@@ -78,7 +85,7 @@ python closd/run.py\
 <details>
   <summary><b>Sequence of tasks</b></summary>
 
-```
+```bash
 python closd/run.py\
   learning=im_big robot=smpl_humanoid\
   epoch=-1 test=True no_virtual_display=True\
@@ -91,7 +98,7 @@ python closd/run.py\
 <details>
   <summary><b>Text-to-motion</b></summary>
 
-```
+```bash
 python closd/run.py\
   learning=im_big robot=smpl_humanoid\
   epoch=-1 test=True no_virtual_display=True\
@@ -111,7 +118,7 @@ python closd/run.py\
 
 - To reproduce Table 1 in the paper.
 
-```
+```bash
 python closd/run.py\
  learning=im_big env=closd_multitask robot=smpl_humanoid\
  exp_name=CLoSD_multitask_finetune\
@@ -133,13 +140,13 @@ python closd/run.py\
 - The evaluation process runs on pre-recorded data and reproduces Table 3 in the paper.
 - The raw results are at `https://huggingface.co/guytevet/CLoSD/blob/main/evaluation/closd/eval.log`, this code should reproduce it.
 
-```
+```bash
 python -m closd.diffusion_planner.eval.eval_humanml --external_results_file closd/diffusion_planner/saved_motions/closd/CloSD.pkl --do_unique
 ```
 
 - To log resutls in Wandb, add:
 
-```
+```bash
  --train_platform_type WandBPlatform --eval_name <wandb_exp_name>
 ```
 
@@ -151,7 +158,7 @@ python -m closd.diffusion_planner.eval.eval_humanml --external_results_file clos
 <details>
   <summary><b>Tracking controller (PHC based)</b></summary>
 
-```
+```bash
 python closd/run.py\
  learning=im_big env=im_single_prim robot=smpl_humanoid\
  env.cycle_motion=True epoch=-1\
@@ -166,7 +173,7 @@ python closd/run.py\
 <details>
   <summary><b>Fine-tune for Multi-task</b></summary>
 
-```
+```bash
 python closd/run.py\
  learning=im_big env=closd_multitask robot=smpl_humanoid\
  learning.params.load_checkpoint=True\
@@ -184,7 +191,7 @@ python closd/run.py\
 <details>
   <summary><b>Fine-tune for Text-to-motion</b></summary>
 
-```
+```bash
 python closd/run.py\
  learning=im_big env=closd_t2m robot=smpl_humanoid\
  learning.params.load_checkpoint=True\
@@ -213,7 +220,7 @@ python closd/run.py\
 
 Full autoregressive generation (without target):
 
-```
+```bash
 python -m closd.diffusion_planner.sample.generate\
  --model_path closd/diffusion_planner/save/DiP_no-target_10steps_context20_predict40/model000200000.pt\
  --num_repetitions 1 --autoregressive
@@ -221,7 +228,7 @@ python -m closd.diffusion_planner.sample.generate\
 
 Prefix completion with target trajectory:
 
-```
+```bash
 python -m closd.diffusion_planner.sample.generate\
  --model_path closd/diffusion_planner/save/DiP_multi-target_10steps_context20_predict40/model000300000.pt\
  --num_repetitions 1 --sampling_mode goal\
@@ -231,7 +238,7 @@ python -m closd.diffusion_planner.sample.generate\
 - To sample with random joint target (instead of sampling it from the data, which is more challenging), use `--target_joint_source random`
 - Other 'legal' joint conditions are:
 
-```
+```bash
 --target_joint_names 
 [traj,heading|
 pelvis,heading|
@@ -249,7 +256,7 @@ left_foot,heading]
 - Evaluate DiP fed by its own predictions (without the CLoSD framework):
 - To reproduce Tables 2 and 3 (the DiP entry) in the paper.
 
-```
+```bash
 python -m closd.diffusion_planner.eval.eval_humanml\
  --guidance_param 7.5\
  --model_path closd/diffusion_planner/save/DiP_no-target_10steps_context20_predict40/model000600343.pt\
@@ -264,7 +271,7 @@ python -m closd.diffusion_planner.eval.eval_humanml\
 
 The following will reproduce the DiP used in the paper:
 
-```
+```bash
 python -m closd.diffusion_planner.train.train_mdm\
  --save_dir closd/diffusion_planner/save/my_DiP\
  --dataset humanml --arch trans_dec --text_encoder_type bert\
