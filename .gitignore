@@ -142,3 +142,5 @@ runs/
 
 closd/diffusion_planner/saved_motions
 closd/diffusion_planner/save
+closd/blender/assets/smpl_humanoid
+closd/blender/results

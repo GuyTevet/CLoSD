@@ -101,7 +101,8 @@ python closd/run.py\
 
 </details>
 
-- For running the model without fine-tuning, use `exp_name=CLoSD_no_finetune`
+- To run the model without fine-tuning, use `exp_name=CLoSD_no_finetune`
+- To run without a monitor, use `headless=True`
 
 
 ## Evaluate
@@ -141,6 +142,37 @@ python -m closd.diffusion_planner.eval.eval_humanml --external_results_file clos
 
 ```
  --train_platform_type WandBPlatform --eval_name <wandb_exp_name>
+```
+
+</details>
+
+## Visualize with Blender
+
+- This script runs with Blender interpreter and visualizes IsaacGym recordings.
+- To record motions with IsaacGym, while simulation is running (on IsaacGym GUI), press `L` to start/stop recording.
+- The recorded file will be saved to `output/states/`
+- The code is based on https://github.com/xizaoqu/blender_for_UniHSI and tested on Blender 4.2
+
+
+<details>
+  <summary><b>Setup Blender interpreter</b></summary>
+
+Run:
+
+```
+blender -b -P closd/blender/setup_blender.py
+```
+
+
+</details>
+
+<details>
+  <summary><b>Run vizualization</b></summary>
+
+Run:
+
+```
+blender -b -P closd/blender/record2anim.py -- --record_path output/states/YOUR_RECORD_NAME.pkl
 ```
 
 </details>
