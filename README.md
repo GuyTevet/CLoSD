@@ -146,34 +146,45 @@ python -m closd.diffusion_planner.eval.eval_humanml --external_results_file clos
 
 </details>
 
-## Visualize with Blender
+## Visualizations
 
-- This script runs with Blender interpreter and visualizes IsaacGym recordings.
 - To record motions with IsaacGym, while simulation is running (on IsaacGym GUI), press `L` to start/stop recording.
 - The recorded file will be saved to `output/states/`
-- The code is based on https://github.com/xizaoqu/blender_for_UniHSI and tested on Blender 4.2
 
 
 <details>
-  <summary><b>Setup Blender interpreter</b></summary>
+  <summary><b>Blender vizualization</b></summary>
 
-Run:
+- This script runs with Blender interpreter and visualizes IsaacGym recordings.
+- The code is based on https://github.com/xizaoqu/blender_for_UniHSI and was tested on Blender 4.2
+
+
+First, setup the Blender interpreter with:
 
 ```
 blender -b -P closd/blender/setup_blender.py
 ```
 
-
-</details>
-
-<details>
-  <summary><b>Run vizualization</b></summary>
-
-Run:
+Then visualize with:
 
 ```
 blender -b -P closd/blender/record2anim.py -- --record_path output/states/YOUR_RECORD_NAME.pkl
 ```
+
+</details>
+
+<details>
+  <summary><b>Extract SMPL parameters</b></summary>
+
+To extract the SMPL parameters of the humanoid, first download [SMPL](https://smpl.is.tue.mpg.de/) and place it in `closd/data/smpl`.
+
+Then run:
+
+```
+python closd/utils/extract_smpl.py --record_path output/states/YOUR_RECORD_NAME.pkl
+```
+
+The script will save the SMPL parameters that can be visualize with standard SMPL tools, for example those of [MDM](https://github.com/GuyTevet/motion-diffusion-model) or [PHC](https://github.com/ZhengyiLuo/PHC).
 
 </details>
 
