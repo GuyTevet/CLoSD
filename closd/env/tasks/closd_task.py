@@ -65,7 +65,7 @@ class CLoSDTask(closd.CLoSD):
         self.hml_prompts = [''] * self.num_envs  # would like to use an np.array but then the text lentgh has to be set in advance
         self.hml_tokens = [''] * self.num_envs  # would like to use an np.array but then the text lentgh has to be set in advance
         self.db_keys = [''] * self.num_envs  # would like to use an np.array but then the text lentgh has to be set in advance
-        self.hml_lengths = np.empty(self.num_envs, dtype=int)  # lengths is not used by DiMP, it is just saved as an additional info when saving the episode
+        self.hml_lengths = np.empty(self.num_envs, dtype=int)  # lengths is not used by CLoSD, it is just saved as an additional info when saving the episode
         self.is_heading = torch.zeros([self.num_envs], dtype=torch.bool).cuda()
         self.num_target_joints = torch.zeros([self.num_envs], dtype=torch.int64).cuda()
         self.is_2d_target = torch.zeros([self.num_envs, 2], dtype=torch.int64).cuda()  # used as an index

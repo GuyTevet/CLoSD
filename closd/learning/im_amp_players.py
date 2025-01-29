@@ -54,7 +54,7 @@ class IMAMPPlayerContinuous(amp_players.AMPPlayerContinuous):
         if self.has_mdm_task and self.closd_eval:
             assert hasattr(self.env.task, 'states_to_eval'), 'Supprting multitask only.'
             self.states_to_eval = self.env.task.states_to_eval
-            print(f'### Evaluating DiMP success rate. Will buffer stats for the following states: {self.states_to_eval}')
+            print(f'### Evaluating CLoSD success rate. Will buffer stats for the following states: {self.states_to_eval}')
             self.success_counters = {k: {'resets': 0, 'success': 0} for k in self.states_to_eval}  # init counters
             self.data_points_per_task = 1000  # hardcoded
 

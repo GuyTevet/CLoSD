@@ -109,7 +109,6 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
         self.vis_contact = False
         self._sampled_motion_ids = torch.arange(self.num_envs).to(self.device)
         self.create_o3d_viewer()
-        self.dimp = False
         self.imitation_reward = compute_imitation_reward
         return
     
@@ -833,7 +832,7 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
 
         motion_times = self.progress_buf * self.dt + self._motion_start_times + self._motion_start_times_offset  # reward is computed after phsycis step, and progress_buf is already updated for next time step.
 
-        motion_res = self._get_state_from_motionlib_cache(self._sampled_motion_ids, motion_times, self._global_offset, source='gen' if self.dimp else 'dataset')  # For DiMP - get data from generator instead of motion lib
+        motion_res = self._get_state_from_motionlib_cache(self._sampled_motion_ids, motion_times, self._global_offset)
 
         ref_root_pos, ref_root_rot, ref_dof_pos, ref_root_vel, ref_root_ang_vel, ref_dof_vel, ref_smpl_params, ref_limb_weights, ref_pose_aa, ref_rb_pos, ref_rb_rot, ref_body_vel, ref_body_ang_vel = \
                 motion_res["root_pos"], motion_res["root_rot"], motion_res["dof_pos"], motion_res["root_vel"], motion_res["root_ang_vel"], motion_res["dof_vel"], \
@@ -879,7 +878,7 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
                 ref_rb_rot_subset = ref_rb_rot[..., self._track_bodies_id, :]
                 ref_body_vel_subset = ref_body_vel[..., self._track_bodies_id, :]
                 ref_body_ang_vel_subset = ref_body_ang_vel[..., self._track_bodies_id, :]
-                self.rew_buf[:], self.reward_raw = self.imitation_reward(root_pos, root_rot, body_pos_subset, body_rot_subset, body_vel_subset, body_ang_vel_subset, ref_rb_pos_subset, ref_rb_rot_subset, ref_body_vel_subset, ref_body_ang_vel_subset, self.reward_specs, calc_rot=not self.dimp)
+                self.rew_buf[:], self.reward_raw = self.imitation_reward(root_pos, root_rot, body_pos_subset, body_rot_subset, body_vel_subset, body_ang_vel_subset, ref_rb_pos_subset, ref_rb_rot_subset, ref_body_vel_subset, ref_body_ang_vel_subset, self.reward_specs, calc_rot=True)
 
         # print(self.dof_force_tensor.abs().max())
         if self.power_reward:
@@ -927,7 +926,7 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
 
         return
 
-    def _get_state_from_motionlib_cache(self, motion_ids, motion_times, offset=None, source=None):
+    def _get_state_from_motionlib_cache(self, motion_ids, motion_times, offset=None):
         ## Cache the motion + offset
         if offset is None  or not "motion_ids" in self.ref_motion_cache or self.ref_motion_cache['offset'] is None or len(self.ref_motion_cache['motion_ids']) != len(motion_ids) or len(self.ref_motion_cache['offset']) != len(offset) \
             or  (self.ref_motion_cache['motion_ids'] - motion_ids).abs().sum() + (self.ref_motion_cache['motion_times'] - motion_times).abs().sum() + (self.ref_motion_cache['offset'] - offset).abs().sum() > 0 :
@@ -1065,8 +1064,6 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
 
         pass_time_max = self.progress_buf >= self.max_episode_length - 1
         pass_time_motion_len = time >= self._motion_lib._motion_lengths
-        if self.dimp:
-            pass_time_motion_len[:] = False  # when using DiMP, the motion is endless -> ignore this signal
         
         if self.cycle_motion:
             pass_time = pass_time_max
@@ -1095,34 +1092,16 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
         else:
             pass_time = pass_time_motion_len
 
-        motion_res = self._get_state_from_motionlib_cache(self._sampled_motion_ids, time, self._global_offset, source='gen' if self.dimp else 'dataset')  # For DiMP - get data from generator instead of motion lib
+        motion_res = self._get_state_from_motionlib_cache(self._sampled_motion_ids, time, self._global_offset)
 
         ref_root_pos, ref_root_rot, ref_dof_pos, ref_root_vel, root_ang_vel, dof_vel, smpl_params, limb_weights, pose_aa, ref_rb_pos, ref_rb_rot, ref_body_vel, ref_body_ang_vel = \
                 motion_res["root_pos"], motion_res["root_rot"], motion_res["dof_pos"], motion_res["root_vel"], motion_res["root_ang_vel"], motion_res["dof_vel"], \
                 motion_res["motion_bodies"], motion_res["motion_limb_weights"], motion_res["motion_aa"], motion_res["rg_pos"], motion_res["rb_rot"], motion_res["body_vel"], motion_res["body_ang_vel"]
 
         if self.zero_out_far and self.zero_out_far_train:
-            # zeros_subset = torch.norm(self._rigid_body_pos[..., 0, :] - ref_rb_pos[..., 0, :], dim=-1) > self._termination_distances[..., 0]
-            # zeros_subset = torch.norm(self._rigid_body_pos[..., 0, :] - ref_rb_pos[..., 0, :], dim=-1) > 0.1
-            # self.reset_buf[zeros_subset], self._terminate_buf[zeros_subset] = compute_humanoid_traj_reset(
-            #     self.reset_buf[zeros_subset], self.progress_buf[zeros_subset], self._contact_forces[zeros_subset],
-            #     self._contact_body_ids,  self._rigid_body_pos[zeros_subset], self.max_episode_length,  self._enable_early_termination,
-            #     0.3, flags.no_collision_check)
-
-            # self.reset_buf[~zeros_subset], self._terminate_buf[~zeros_subset] = compute_humanoid_reset(
-            #     self.reset_buf[~zeros_subset], self.progress_buf[~zeros_subset], self._contact_forces[~zeros_subset],
-            #     self._contact_body_ids, self._rigid_body_pos[~zeros_subset][..., self._reset_bodies_id, :], ref_rb_pos[~zeros_subset][..., self._reset_bodies_id, :],
-            #     pass_time[~zeros_subset], self._enable_early_termination,
-            #     self._termination_distances[..., self._reset_bodies_id], flags.no_collision_check)
-
-            # self.reset_buf, self._terminate_buf = compute_humanoid_traj_reset(  # traj reset
-            #     self.reset_buf, self.progress_buf, self._contact_forces, self._contact_body_ids, self._rigid_body_pos, pass_time_max, self._enable_early_termination, 0.3, flags.no_collision_check)
-            if self.dimp:
-                self.reset_buf[:], self._terminate_buf[:] = compute_humanoid_reset()
-            else:
-                self.reset_buf[:], self._terminate_buf[:] = compute_humanoid_im_reset(  # Humanoid reset
-                    self.reset_buf, self.progress_buf, self._contact_forces, self._contact_body_ids, self._rigid_body_pos[..., self._reset_bodies_id, :], ref_rb_pos[..., self._reset_bodies_id, :], pass_time, self._enable_early_termination, self._termination_distances[..., self._reset_bodies_id],
-                    flags.no_collision_check, flags.im_eval and (not self.strict_eval))
+            self.reset_buf[:], self._terminate_buf[:] = compute_humanoid_im_reset(  # Humanoid reset
+                self.reset_buf, self.progress_buf, self._contact_forces, self._contact_body_ids, self._rigid_body_pos[..., self._reset_bodies_id, :], ref_rb_pos[..., self._reset_bodies_id, :], pass_time, self._enable_early_termination, self._termination_distances[..., self._reset_bodies_id],
+                flags.no_collision_check, flags.im_eval and (not self.strict_eval))
 
         else:
             body_pos = self._rigid_body_pos[..., self._reset_bodies_id, :].clone()
@@ -1131,12 +1110,10 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
             if self._occl_training:
                 ref_body_pos[self.random_occlu_idx[:, self._reset_bodies_id]] = body_pos[self.random_occlu_idx[:, self._reset_bodies_id]]
 
-            if self.dimp:
-                pass
-            else:
-                self.reset_buf[:], self._terminate_buf[:] = compute_humanoid_im_reset(self.reset_buf, self.progress_buf, self._contact_forces, self._contact_body_ids, \
-                                                                                body_pos, ref_body_pos, pass_time, self._enable_early_termination,
-                                                                                self._termination_distances[..., self._reset_bodies_id], flags.no_collision_check, flags.im_eval and (not self.strict_eval))
+
+            self.reset_buf[:], self._terminate_buf[:] = compute_humanoid_im_reset(self.reset_buf, self.progress_buf, self._contact_forces, self._contact_body_ids, \
+                                                                            body_pos, ref_body_pos, pass_time, self._enable_early_termination,
+                                                                            self._termination_distances[..., self._reset_bodies_id], flags.no_collision_check, flags.im_eval and (not self.strict_eval))
         is_recovery = torch.logical_and(~pass_time, self._cycle_counter > 0)  # pass time should override the cycle counter.
         self.reset_buf[is_recovery] = 0
         self._terminate_buf[is_recovery] = 0

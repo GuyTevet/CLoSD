@@ -63,7 +63,7 @@ class HumanoidAMPTask(humanoid_amp.HumanoidAMP):
         return
    
     def pre_physics_record_states(self):
-        # a placeholder for DiMP
+        # a placeholder for CLoSD
         return
 
     def render(self, sync_frame_time=False):
