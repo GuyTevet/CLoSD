@@ -3,6 +3,8 @@ import torch
 import numpy as np
 import json
 import time
+import pickle
+import yaml
 from closd.utils.flags import flags
 from datetime import datetime
 from isaacgym import gymtorch
@@ -82,7 +84,6 @@ class CLoSD(humanoid_im.HumanoidIm):
 
         self.frame_idx = 0
         self.last_gen_idx = -1
-        self.fix_ik_bug = self.cfg['env']['dip'].get('fix_ik_bug', True) 
 
         self.time_prints = False  # Hardcoded
         self.mdm_path = self.cfg['env']['dip']['model_path']
@@ -140,9 +141,10 @@ class CLoSD(humanoid_im.HumanoidIm):
 
         self.pose_buffer = torch.empty([self.num_envs, self.context_len_30fps, 24, 3], dtype=torch.float32, device=self.device)
         self.planning_horizon = torch.empty([self.num_envs, self.planning_horizon_30fps, 24, 3], dtype=torch.float32, device=self.device)
-        self.handle_text_distrib = self.cfg['env']['dip'].get('handle_text_distrib', False)
         self.used_db_keys = []  # book which motion keys have been already used, i.e., their text used for generation
 
+        # save episodes in hml format, to be used for evaluation
+        self.init_save_hml_episodes()
 
         self.mdm_tensor_shape = (self.cfg['env']['num_envs'], self.mdm.njoints, self.mdm.nfeats, self.max_frame_20fps)
 
@@ -153,11 +155,45 @@ class CLoSD(humanoid_im.HumanoidIm):
                                          time_prints=self.time_prints,
                                          )
         
-        if self.handle_text_distrib:
-            self.max_tries_per_text = self.cfg['env']['dip'].get('max_tries_per_text', 100)
-            self.failed_texts_count = {}
-        
+    def init_save_hml_episodes(self):
+        self.save_hml_episodes = self.cfg['env']['save_motion']['save_hml_episodes']
+        if self.save_hml_episodes:
+            
+            self.max_saved_hml_episodes = self.cfg['env']['save_motion']['max_saved_hml_episodes']
+            self.save_episodes_file_name = 'CLoSD'
+            self.n_all_episodes = 0
+            # the amount of frames to crop from the beginningof the episode
+            self.prefix_crop_size = self.cfg['env']['save_motion']['prefix_crop_size']
+            # assert self.prefix_crop_size >= self.context_len_30fps
+            self.max_episode_length = self.max_episode_length + self.prefix_crop_size  # FIXME: it is bad practice to overide a global variable. better use a different name
+            self.save_name_suffix = self.cfg['env']['save_motion']['save_name_suffix']
+            self.done_saving_episodes = False  # FIXME: convert to a boolean in the base class, saying "task_done"
+
+            # prepare buffers where episode data will be stored. Use PHC format to make all conversions together at the end only
+            self.episode_buf = torch.empty([self.num_envs,                self.max_episode_length, 24, 3], dtype=torch.float32, device=self.device)
+            self.all_episodes = torch.empty([self.max_saved_hml_episodes, self.max_episode_length-self.prefix_crop_size, 24, 3], dtype=torch.float32, device='cpu')  # use 'cpu' as gpu has smaller space
+            self.all_episodes_prompts = [None] * self.max_saved_hml_episodes
+            self.all_episodes_tokens = [None] * self.max_saved_hml_episodes
+            self.all_episodes_db_keys = [None] * self.max_saved_hml_episodes
+            self.all_episodes_lengths = np.empty(self.max_saved_hml_episodes)           
+            
+            # create output folder
+            self.save_hml_episodes_dir = self.cfg['env']['save_motion']['save_hml_episodes_dir']
+            if self.save_hml_episodes_dir in ['', None]:
+                model_path_no_ext = os.path.splitext(self.cfg['env']['dip']['model_path'])[0]
+                now = datetime.now()
+                timestamp = now.strftime("%y_%m_%d_%H_%M")
+                save_name_suffix = self.save_name_suffix if not self.save_name_suffix in ['',None] else timestamp
+                self.save_hml_episodes_dir = f'{model_path_no_ext}.CLoSD_cfg{self.mdm_cfg_param}_planh{self.planning_horizon_20fps}_crop{self.prefix_crop_size}_exp{self.cfg["exp_name"]}_epoc{self.cfg["epoch"]}_max{self.max_saved_hml_episodes}_{save_name_suffix}'
+            os.makedirs(self.save_hml_episodes_dir)
+            print(f'Saving hml episodes to [{self.save_hml_episodes_dir}]')
+            
+            # save config data
+            cfg_file_name = os.path.join(self.save_hml_episodes_dir, 'config.yaml')
+            with open(cfg_file_name, 'w') as cfg_file:
+                yaml.dump(self.cfg, cfg_file, default_flow_style=False)
     
+
     def build_completion_input(self, context_switch_vec=None):
         # input: hml_poses [n_envs, n_frames@20fps, 263]
         # context_switch_vec [n_envs] if not None - indicates which env will use prediction context insted of sim contest
@@ -286,7 +322,6 @@ class CLoSD(humanoid_im.HumanoidIm):
         if self.time_prints:
             print('=== sample mdm for [{}] envs took [{:.2f}] sec'.format(sample.shape[0], time.time() - start_time))
 
-        # _, _, recon_data1 = self.rep.pose_to_hml(self.pose_buffer, fix_ik_bug=self.fix_ik_bug)  # [bs, n_frames@20fps, 263], [bs, n_points, 3]
         sample_reshaped = sample.squeeze(2).permute(0, 2, 1)
         sample_xyz = self.rep.hml_to_pose(sample_reshaped, recon_data, sim_at_hml_idx=model_kwargs['y']['prefix_len']-1)  # hml rep [bs, n_frames_20fps, 263] -> smpl xyz [bs, n_frames_30fps, 24, 3]
 
@@ -375,6 +410,8 @@ class CLoSD(humanoid_im.HumanoidIm):
 
         # init pose buffer from current performed pose
         body_pos = self._rigid_body_pos[env_ids]  # what's used by isaac
+        if self.save_hml_episodes:
+            self.episode_buf[env_ids] = body_pos[:, None].repeat(1, self.max_episode_length, 1, 1)
         ref_pos = self.rep.sim_pose_to_ref_pose(body_pos)[:, None]  # convert to what's used by phc
         self.pose_buffer[env_ids] = body_pos[:, None].repeat(1, self.context_len_30fps, 1, 1)  # [n_envs, len(env_ids), n_joints, 3]
         self.planning_horizon[env_ids] = ref_pos.repeat(1, self.planning_horizon_30fps, 1, 1)  # [n_envs, horizon_len, 24, 3]
@@ -386,7 +423,7 @@ class CLoSD(humanoid_im.HumanoidIm):
             # convert prefix to isaac format
             # cur_frame = self.rep.sim_pose_to_ref_pose(self._rigid_body_pos)
             sim_at_hml_idx = (self.frame_idx % self.planning_horizon_30fps) * 20 // 30  # FIXME: check if we need a '-1' here
-            hml_from_pose, _, recon_data = self.rep.pose_to_hml(self.pose_buffer, fix_ik_bug=self.fix_ik_bug) # compute rot/trans of simulator character
+            hml_from_pose, _, recon_data = self.rep.pose_to_hml(self.pose_buffer, fix_ik_bug=True) # compute rot/trans of simulator character
 
             planning_horizon = self.rep.hml_to_pose(self.hml_prefix_from_data.squeeze(2).permute(0, 2, 1), recon_data, sim_at_hml_idx=sim_at_hml_idx)  # hml rep [bs, n_frames_20fps, 263] -> smpl xyz [bs, n_frames_30fps, 24, 3]
 
@@ -404,11 +441,75 @@ class CLoSD(humanoid_im.HumanoidIm):
         super().post_physics_step()
         self._update_pose_buffer()
         self.frame_idx += 1
+        if self.save_hml_episodes and self.n_all_episodes < self.max_saved_hml_episodes:
+            env_ids = self.get_episode_ids()
+            self.aggregate_episodes(env_ids)
+            if self.n_all_episodes == self.max_saved_hml_episodes:
+                self.save_episodes()
+
+    def save_episodes(self):
+        self.done_saving_episodes = True
+                
+        # convert to hml format
+        # while fix_ik_bug=False imitates HumanML3D distribution, fix_ik_bug=True attains better quantitative scores, probably because it is closer to the real phisical distribution + it eases the "work" for MDM
+        hml_motions, _, _ = self.rep.pose_to_hml(self.all_episodes[:self.n_all_episodes], None, fix_ik_bug=True)  # [bs, max_episode_len@20fps, 263]
+        hml_motions = hml_motions.unsqueeze(2).permute(0, 3, 2, 1)  # [bs, 263, 1, max_episode_len@20fps]
+            
+        data_to_save = {'motion': hml_motions.squeeze().permute(0, 2, 1),  # use the same format used for evaluation
+                        'caption': self.all_episodes_prompts[:self.n_all_episodes], 
+                        'length': self.all_episodes_lengths[:self.n_all_episodes], 
+                        'tokens': self.all_episodes_tokens[:self.n_all_episodes],
+                        'db_key': self.all_episodes_db_keys[:self.n_all_episodes]}
+                
+        file_path = os.path.join(self.save_hml_episodes_dir, self.save_episodes_file_name+'.pkl')
+        with open(file_path, 'wb') as f:
+            pickle.dump(data_to_save, f, protocol=4)
+        print(f'Saved episodes to {file_path}')
+           
+        if self.cfg['env']['dip']['debug_hml'] and hml_motions.shape[0] >= 12:  
+            n_vis = 3
+            n_files = 4
+            for start in range(0,n_files*n_vis, n_vis):
+                idx = range(start, start+n_vis)
+                vis_path = os.path.join(self.save_hml_episodes_dir, f'{self.save_episodes_file_name}_{start}_{start+n_vis}.mp4')   
+                prmopts = np.array(self.all_episodes_prompts)[idx]
+                self.visualize(hml_motions[idx].cuda(), vis_path, is_prefix_comp=False, model_kwargs=None, prompts=prmopts)
+                print(f'saved visualization to {vis_path}')
+
+    def get_episode_ids(self):
+        if_full_episode = self.progress_buf == self.max_episode_length-1
+        is_full_valid_episode = torch.logical_and(if_full_episode, torch.logical_not(self._terminate_buf))
+        env_ids = torch.nonzero(is_full_valid_episode)  # self._reset_ref_env_ids contains terminations so can't be used
+        env_ids = env_ids.squeeze(1).tolist()
+        return env_ids
+
+    def aggregate_episodes(self, env_ids):
+        if len(env_ids) == 0:
+            return
+                
+        n_episodes_done = len(env_ids)
+        idx_from = self.n_all_episodes  
+        idx_to = idx_from+n_episodes_done
+        if idx_to > self.max_saved_hml_episodes:
+            idx_to = self.max_saved_hml_episodes
+            env_ids = env_ids[:idx_to-idx_from]
+            n_episodes_done = len(env_ids)
+        self.all_episodes[idx_from:idx_to] = self.episode_buf[env_ids, self.prefix_crop_size:].cpu()  # use only predicted part w/o the context (actually, w/o what we decided to crop)
+        
+        self.all_episodes_prompts[idx_from:idx_to] = np.array(self.hml_prompts)[env_ids].tolist()  # must use tolist(), otherwise np dtype comes as a prompt
+        self.all_episodes_tokens[idx_from:idx_to] = np.array(self.hml_tokens)[env_ids].tolist()  # must use tolist(), otherwise np dtype comes as a prompt
+        self.all_episodes_db_keys[idx_from:idx_to] = np.array(self.db_keys)[env_ids].tolist()  # must use tolist(), otherwise np dtype comes as a prompt
+        self.all_episodes_lengths[idx_from:idx_to] = self.hml_lengths[env_ids]
+        self.used_db_keys.extend(np.array(self.db_keys)[env_ids])
+        self.n_all_episodes += n_episodes_done
+        print(f'Done {self.n_all_episodes} episodes')
     
     def _update_pose_buffer(self):
         # buffer the last perforemd pose in xyz locations and pop the oldest buffered frame
         body_pos = self._rigid_body_pos[:, None]
         self.pose_buffer = torch.cat([self.pose_buffer[:, 1:], body_pos], dim=1)  # [n_envs, buff_size, n_joints, 3]
+        if self.save_hml_episodes:
+            self.episode_buf[torch.arange(len(self.progress_buf)), self.progress_buf] = self._rigid_body_pos
 
     def _compute_reset(self):
         Humanoid._compute_reset(self)  # reset if fails or got to end of episode

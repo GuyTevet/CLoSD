@@ -430,7 +430,8 @@ class CompMDMExternalDataset(CompMDMGeneratedDataset):
             assert all([len(external_motions[k]) == len(unique_idx) for k in external_motions.keys()]), 'Unique motion count mismatch'
             print(f'no. unique keys: {len(unique_idx)}')
             
-        # FIXME: the following is commented out because it was added in a later stage. should be uncommented after submission to ICLR    
+        # The following is commented out because it was added in a later stage. 
+        # Normally we would like to limit the number of samples, but the original CLoSD evaluation was done w/o this limitation 
         # if num_samples_limit is not None:
         #     for k, v in external_motions.items():
         #         external_motions[k] = v[:num_samples_limit]
