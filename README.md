@@ -134,6 +134,10 @@ python closd/run.py\
 ```
 python -m closd.diffusion_planner.eval.eval_humanml --external_results_file closd/diffusion_planner/saved_motions/closd/CloSD.pkl --do_unique
 ```
+- To log resutls in WandB, add:
+  ```
+  --train_platform_type WandBPlatform --eval_name <wandb_exp_name>
+  ```
 - The evaluation process runs on pre-recorded data and reproduces Table 3 in the paper.
 - The raw results are at `https://huggingface.co/guytevet/CLoSD/blob/main/evaluation/closd/eval.log`, this code should reproduce it.
 - In case you want to re-record the data yourself (reproduce the `external_results_file` .pkl file), run:
@@ -146,11 +150,6 @@ python -m closd.diffusion_planner.eval.eval_humanml --external_results_file clos
     env.episode_length=300 \
     env.save_motion.save_hml_episodes=True \
     env.save_motion.save_hml_episodes_dir=<target_folder_name>
-  ```
-
-- To log resutls in WandB, add:
-  ```
-  --train_platform_type WandBPlatform --eval_name <wandb_exp_name>
   ```
 
 </details>
