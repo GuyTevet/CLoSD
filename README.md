@@ -136,17 +136,18 @@ python -m closd.diffusion_planner.eval.eval_humanml --external_results_file clos
 ```
 - The evaluation process runs on pre-recorded data and reproduces Table 3 in the paper.
 - The raw results are at `https://huggingface.co/guytevet/CLoSD/blob/main/evaluation/closd/eval.log`, this code should reproduce it.
-- The default external_results_file is the one created by the authors. If you would like to use your own results file, run CLoSD [Text-to-motion](#run-closd-t2m), with the following modified arguments:
-  - Arguments to replace:
+- In case you want to re-record the data yourself (reproduce the `external_results_file` .pkl file), run:
   ```
-  env.num_envs=4096 headless=True 
+  python closd/run.py\
+    learning=im_big robot=smpl_humanoid\
+    epoch=-1 test=True no_virtual_display=True\
+    headless=True env.num_envs=4096\
+    env=closd_t2m exp_name=CLoSD_t2m_finetune \
+    env.episode_length=300 \
+    env.save_motion.save_hml_episodes=True \
+    env.save_motion.save_hml_episodes_dir=<target_folder_name>
   ```
-    - Arguments to add:
-  ```
-  env.episode_length=300\
-  env.save_motion.save_hml_episodes=True\
-  env.save_motion.save_hml_episodes_dir=<target_folder_name>
-  ```
+
 - To log resutls in WandB, add:
   ```
   --train_platform_type WandBPlatform --eval_name <wandb_exp_name>
