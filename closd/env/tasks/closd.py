@@ -156,7 +156,9 @@ class CLoSD(humanoid_im.HumanoidIm):
                                          )
         
     def init_save_hml_episodes(self):
-        self.save_hml_episodes = self.cfg['env']['save_motion']['save_hml_episodes']
+        save_motions = self.cfg['env'].get('save_motion', {})
+        self.save_hml_episodes = save_motions.get('save_hml_episodes', False)
+        # self.save_hml_episodes = self.cfg['env']['save_motion']['save_hml_episodes']  # this line crashes when "env" is not "closd_t2m". fixed above.
         if self.save_hml_episodes:
             
             self.max_saved_hml_episodes = self.cfg['env']['save_motion']['max_saved_hml_episodes']
