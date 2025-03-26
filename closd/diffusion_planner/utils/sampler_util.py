@@ -43,7 +43,7 @@ class AutoRegressiveSampler():
     
     def sample(self, model, shape, **kargs):
         bs = shape[0]
-        n_iterations = (self.required_frames // self.args.pred_len) + 1
+        n_iterations = (self.required_frames + self.args.pred_len - 1) // self.args.pred_len
         samples_buf = []
         cur_prefix = deepcopy(kargs['model_kwargs']['y']['prefix'])  # init with data
         if self.args.autoregressive_include_prefix:
