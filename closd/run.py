@@ -293,9 +293,12 @@ def main(cfg_hydra: DictConfig) -> None:
     cfg.train = not cfg.test
     project_name = cfg.get("project_name", "egoquest")
     if (not cfg.no_log) and (not cfg.test) and (not cfg.debug):
-        wandb.login(host=os.getenv("WANDB_BASE_URL"), key=os.getenv("WANDB_API_KEY"))
+        wandb_entity = None
+        if os.getenv("WANDB_BASE_URL") and os.getenv("WANDB_API_KEY"):
+            wandb.login(host=os.getenv("WANDB_BASE_URL"), key=os.getenv("WANDB_API_KEY"))
+            wandb_entity = os.getenv("WANDB_ENTITY", "tau-motion")
         wandb.init(
-            entity='tau-motion',
+            entity=wandb_entity,
             project=project_name,
             name=cfg.exp_name,
             id=cfg.exp_name,  # in order to send continued runs to the same record
