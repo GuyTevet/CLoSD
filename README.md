@@ -45,7 +45,7 @@ python -m spacy download en_core_web_sm
 
 ```
 conda activate closd
-cd <ISSAC_GYM_DIR>/python
+cd <ISAAC_GYM_DIR>/python
 pip install -e .
 ```
 
