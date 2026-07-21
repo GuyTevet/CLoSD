@@ -407,7 +407,7 @@ class TrainLoop:
                     self.train_platform.report_media(title='Motion', series='Predicted Motion [{}] [{}]'.format(gen_args.target_joint_source, gen_args.target_joint_names), iteration=self.total_step(),
                                                 local_path=all_sample_save_path)  
                 except ValueError:
-                    print(f'{interesting_joint_case} is not in the alowed list')  
+                    print(f'{interesting_joint_case} is not in the allowed list')  
 
     
     def find_resume_checkpoint(self) -> Optional[str]:
